@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastro de Produtos</title>
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+
+	<!-- Formulário de Cadastro -->
+	<div class="card mt-4">
+		<div class="card-header">
+			<h4>Adicionar Produto</h4>
+		</div>
+		<div class="card-body">
+			<form id="formCadastro">
+				<div class="mb-3">
+					<label for="nomeProduto" class="form-label">Nome do Produto</label>
+					<input type="text" class="form-control" id="nomeProduto"
+						placeholder="Digite o nome do produto">
+				</div>
+				<button type="submit" class="btn btn-primary">Cadastrar</button>
+
+				<!-- Lista de Produtos -->
+				<div class="card mt-4">
+					<div class="card-header">
+						<h4>Lista de Produtos</h4>
+					</div>
+					<div class="card-body">
+						<button id="btnListar" class="btn btn-success mb-3">Atualizar
+							Lista</button>
+						<ul id="listaProdutos" class="list-group">
+							<!-- Produtos serão carregados aqui -->
+						</ul>
+					</div>
+				</div>
+
+
+
+			</form>
+			
+			
+			<div class="mt-5">
+    <h4>Funcionários e Produtos Associados</h4>
+    <button class="btn btn-primary" id="btnListarFuncionariosComProdutos">Listar Funcionários</button>
+    <table class="table mt-3">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Funcionário</th>
+                <th>Produtos</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaFuncionariosComProdutos">
+            <!-- Dados serão carregados aqui -->
+        </tbody>
+    </table>
+</div>
+			
+		</div>
+	</div>
+
+
+	<script>
+		const baseUrl = "http://localhost:8000/controle-ntw";
+
+		$('#formCadastro')
+				.on(
+						'submit',
+						function(e) {
+							e.preventDefault();
+							const nomeProduto = $('#nomeProduto').val();
+						
+
+
+							$
+									.ajax({
+										url : `${baseUrl}/controle-ntw/salvarProduto`,
+										method : "POST",
+										contentType : "application/json",
+										data : JSON.stringify({
+											nomeProduto : nomeProduto,
+										
+										}),
+										success : function() {
+											alert("Produto cadastrado com sucesso!");
+											$('#nomeProduto').val('');
+											carregarProdutos();
+										},
+										error : function(xhr) {
+											alert(`Erro ao cadastrar produto: ${xhr.responseText}`);
+										}
+									});
+						});
+		
+		  function carregarProdutos() {
+	            $.ajax({
+	                url: `${baseUrl}/controle-ntw/listarProdutos`,
+	                method: "GET",
+	                success: function (response) {
+	                    const lista = $('#listaProdutos');
+	                    lista.empty();
+	                    response.forEach(produto => {
+	                        lista.append(`<li class="list-group-item">${produto.nomeProduto}</li>`);
+	                    });
+	                },
+	                error: function (xhr) {
+	                    alert(`Erro ao carregar produtos: ${xhr.responseText}`);
+	                }
+	            });
+	        }
+		  
+		  function carregarProdutosNaoAssociados() {
+			    $.ajax({
+			        url: `${baseUrl}/controle-ntw/listarProdutosDisponiveis`,
+			        method: "GET",
+			        success: function (response) {
+			            const select = $('#produtoSelect');
+			            select.empty().append('<option value="" disabled selected>Selecione um produto</option>');
+			            response.forEach(produto => {
+			                select.append(`<option value="${produto.id}">${produto.nomeProduto}</option>`);
+			            });
+			        },
+			        error: function (xhr) {
+			            alert(`Erro ao carregar produtos disponíveis: ${xhr.responseText}`);
+			        }
+			    });
+			}
+
+		  
+		   $('#btnListar').on('click', carregarProdutos);
+		   
+		   $('#btnListarFuncionariosComProdutos').on('click', function () {
+			    $.ajax({
+			    	url: `${baseUrl}/controle-ntw/funcionariosComProdutos`,
+			        
+			        method: "GET",
+			        success: function (response) {
+			            const tabela = $('#tabelaFuncionariosComProdutos');
+			            tabela.empty(); // Limpa a tabela antes de preenchê-la
+
+			            response.forEach((funcionario, index) => {
+			                // Lista de produtos do funcionário
+			                const produtos = funcionario.listaProdutos.map(produto => produto.nomeProduto).join(", ");
+
+			                tabela.append(`
+			                    <tr>
+			                        <th>${index + 1}</th>
+			                        <td>${funcionario.name}</td>
+			                        <td>${produtos || "Nenhum produto associado"}</td>
+			                    </tr>
+			                `);
+			            });
+			        },
+			        error: function (xhr) {
+			            alert(`Erro ao carregar funcionários e produtos: ${xhr.responseText}`);
+			        }
+			    });
+			});
+	</script>
+
+
+
+
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+		
+	</script>
+</body>
+
+</html>

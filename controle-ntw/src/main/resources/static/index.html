@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Estoque</title>
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+	<div class="container mt-5">
+		<h1 class="text-center">Controle de Estoque</h1>
+
+		<!-- Formulário de Cadastro -->
+		<div class="card mt-4">
+			<div class="card-header">
+				<h4>Adicionar Produto ao Funcionário</h4>
+			</div>
+			<div class="card-body">
+				<form id="formCadastro">
+					<div class="mb-3">
+						<label for="funcionarioSelect" class="form-label">Selecione
+							o Funcionário</label> <select class="form-select" id="funcionarioSelect"
+							required>
+							<option value="" disabled selected>Selecione um
+								funcionário</option>
+						</select>
+					</div>
+					<div class="mb-3">
+						<label for="produtoSelect" class="form-label">Selecione o
+							Produto</label> <select class="form-select" id="produtoSelect" required>
+							<option value="" disabled selected>Selecione um produto</option>
+						</select>
+					</div>
+					<button type="submit" class="btn btn-primary">Associar
+						Produto</button>
+				</form>
+			</div>
+		</div>
+
+		<!-- Modais -->
+		<button type="button" class="btn btn-primary mt-4"
+			id="openModalButtonFuncionario">Abrir Lista de Funcionários</button>
+		<button type="button" class="btn btn-primary mt-4"
+			id="openModalButtonProdutos">Abrir Lista de Produtos</button>
+
+		<!-- Modal Produtos -->
+		<div class="modal fade" id="modalProdutos" tabindex="-1"
+			aria-labelledby="exampleModalLabel" aria-hidden="true">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="exampleModalLabel">Lista de
+							Produtos</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"
+							aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<table class="table">
+							<thead>
+								<tr>
+									<th scope="col">#</th>
+									<th scope="col">ID</th>
+									<th scope="col">Produto</th>
+								</tr>
+							</thead>
+							<tbody id="tabelaProdutos">
+								<!-- Linhas serão carregadas aqui -->
+							</tbody>
+						</table>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary"
+							data-bs-dismiss="modal">Fechar</button>
+						<button type="button" class="btn btn-primary"
+							id="btnListarProdutosModal">Listar Produtos</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal Funcionários -->
+		<div class="modal fade" id="modalFuncionarios" tabindex="-1"
+			aria-labelledby="exampleModalLabel" aria-hidden="true">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="exampleModalLabel">Funcionários</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"
+							aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<table class="table">
+							<thead>
+								<tr>
+									<th scope="col">#</th>
+									<th scope="col">ID</th>
+									<th scope="col">Nome</th>
+								</tr>
+							</thead>
+							<tbody id="tabelaFuncionarios">
+								<!-- Linhas serão carregadas aqui -->
+							</tbody>
+						</table>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary"
+							data-bs-dismiss="modal">Fechar</button>
+						<button type="button" class="btn btn-primary"
+							id="btnListarFuncionariosModal">Listar Funcionários</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+        const baseUrl = "http://localhost:8000/controle-ntw";
+
+        // Função para carregar funcionários no dropdown
+        function carregarFuncionariosNoDropdown() {
+            $.ajax({
+                url: `${baseUrl}/controle-ntw/listarFuncionarios`,
+                method: "GET",
+                success: function (response) {
+                    const select = $('#funcionarioSelect');
+                    select.empty().append('<option value="" disabled selected>Selecione um funcionário</option>');
+                    response.forEach(funcionario => {
+                        select.append(`<option value="${funcionario.id}">${funcionario.name}</option>`);
+                    });
+                },
+                error: function (xhr) {
+                    alert(`Erro ao carregar funcionários: ${xhr.responseText}`);
+                }
+            });
+        }
+
+        // Função para carregar produtos no dropdown
+        function carregarProdutosNoDropdown() {
+            $.ajax({
+                url: `${baseUrl}/controle-ntw/listarProdutos`,
+                method: "GET",
+                success: function (response) {
+                    const select = $('#produtoSelect');
+                    select.empty().append('<option value="" disabled selected>Selecione um produto</option>');
+                    response.forEach(produto => {
+                        select.append(`<option value="${produto.id}">${produto.nomeProduto}</option>`);
+                    });
+                },
+                error: function (xhr) {
+                    alert(`Erro ao carregar produtos: ${xhr.responseText}`);
+                }
+            });
+        }
+
+        // Evento para associar produto a funcionário
+      $('#formCadastro').on('submit', function (e) {
+    e.preventDefault();
+
+    const produtoId = $('#produtoSelect').val();
+    const funcionarioId = $('#funcionarioSelect').val();
+
+    if (!produtoId || !funcionarioId) {
+        alert("Selecione um produto e um funcionário!");
+        return;
+    }
+
+    $.ajax({
+        url: `${baseUrl}/controle-ntw/associarProduto`,
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ produtoId, funcionarioId }),
+        success: function () {
+            alert("Produto associado ao funcionário com sucesso!");
+            carregarProdutosNaoAssociados(); // Recarrega a lista de produtos disponíveis
+        },
+        error: function (xhr) {
+            alert(`Erro ao associar produto: ${xhr.responseText}`);
+        }
+    });
+});
+
+
+
+        // Função para carregar tabela de produtos no modal
+        function carregarTabelaProdutos() {
+            $.ajax({
+                url: `${baseUrl}/controle-ntw/listarProdutos`,
+                method: "GET",
+                success: function (response) {
+                    const tabela = $('#tabelaProdutos');
+                    tabela.empty();
+                    response.forEach((produto, index) => {
+                        tabela.append(`
+                            <tr>
+                                <th scope="row">${index + 1}</th>
+                                <td>${produto.id}</td>
+                                <td>${produto.nomeProduto}</td>
+                            </tr>
+                        `);
+                    });
+                },
+                error: function (xhr) {
+                    alert(`Erro ao carregar produtos: ${xhr.responseText}`);
+                }
+            });
+        }
+
+        // Função para carregar tabela de funcionários no modal
+        function carregarTabelaFuncionarios() {
+            $.ajax({
+                url: `${baseUrl}/controle-ntw/listarFuncionarios`,
+                method: "GET",
+                success: function (response) {
+                    const tabela = $('#tabelaFuncionarios');
+                    tabela.empty();
+                    response.forEach((funcionario, index) => {
+                        tabela.append(`
+                            <tr>
+                                <th scope="row">${index + 1}</th>
+                                <td>${funcionario.id}</td>
+                                <td>${funcionario.name}</td>
+                            </tr>
+                        `);
+                    });
+                },
+                error: function (xhr) {
+                    alert(`Erro ao carregar funcionários: ${xhr.responseText}`);
+                }
+            });
+        }
+
+        // Eventos para abrir os modais
+        $('#openModalButtonProdutos').on('click', function () {
+            $('#modalProdutos').modal('show');
+            carregarTabelaProdutos();
+        });
+
+        $('#openModalButtonFuncionario').on('click', function () {
+            $('#modalFuncionarios').modal('show');
+            carregarTabelaFuncionarios();
+        });
+
+        // Inicializar os dropdowns ao carregar a página
+        $(document).ready(function () {
+            carregarFuncionariosNoDropdown();
+            carregarProdutosNoDropdown();
+        });
+    </script>
+
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
